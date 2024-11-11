@@ -1,73 +1,50 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
-import logoImg from './assets/logo.png';
-import DeleteConfirmation from './components/DeleteConfirmation.jsx';
-import Modal from './components/Modal.jsx';
+import { useRef, useState, useCallback } from 'react';
 
 import Places from './components/Places.jsx';
-import {AVAILABLE_PLACES} from './data.js';
-import {sortPlacesByDistance} from './loc.js';
-
-const storedIds = JSON.parse(localStorage.getItem('selectedPlaces')) || [];
-const storedPlaces = storedIds.map(id => AVAILABLE_PLACES.find(place => place.id === id));
-
+import Modal from './components/Modal.jsx';
+import DeleteConfirmation from './components/DeleteConfirmation.jsx';
+import logoImg from './assets/logo.png';
+import AvailablePlaces from './components/AvailablePlaces.jsx';
 
 function App() {
   const selectedPlace = useRef();
-  const [isOpen, setIsOpen] = useState(false);
-  const [pickedPlaces, setPickedPlaces] = useState(storedPlaces);
-  const [availablePlaces, setAvailablePlaces] = useState(AVAILABLE_PLACES);
 
+  const [userPlaces, setUserPlaces] = useState([]);
 
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition(position => {
-      const sortedPlaces = sortPlacesByDistance(
-        AVAILABLE_PLACES,
-        position.coords.latitude,
-        position.coords.longitude
-      );
-      setAvailablePlaces(sortedPlaces);
-    });
+  const [modalIsOpen, setModalIsOpen] = useState(false);
 
-
-  }, []);
-
-  function handleStartRemovePlace(id) {
-    setIsOpen(true);
-    selectedPlace.current = id;
+  function handleStartRemovePlace(place) {
+    setModalIsOpen(true);
+    selectedPlace.current = place;
   }
 
   function handleStopRemovePlace() {
-    setIsOpen(false);
+    setModalIsOpen(false);
   }
 
-  function handleSelectPlace(id) {
-    setPickedPlaces((prevPickedPlaces) => {
-      if (prevPickedPlaces.some((place) => place.id === id)) {
+  function handleSelectPlace(selectedPlace) {
+    setUserPlaces((prevPickedPlaces) => {
+      if (!prevPickedPlaces) {
+        prevPickedPlaces = [];
+      }
+      if (prevPickedPlaces.some((place) => place.id === selectedPlace.id)) {
         return prevPickedPlaces;
       }
-      const place = AVAILABLE_PLACES.find((place) => place.id === id);
-      return [place, ...prevPickedPlaces];
+      return [selectedPlace, ...prevPickedPlaces];
     });
-
-    const storedIds = JSON.parse(localStorage.getItem('selectedPlaces')) || [];
-    if (!storedIds.includes(id)) {
-      localStorage.setItem('selectedPlaces', JSON.stringify([id, ...storedIds]));
-    }
   }
 
-  const handleRemovePlace = useCallback(function handleRemovePlace() {
-    setPickedPlaces((prevPickedPlaces) =>
-      prevPickedPlaces.filter((place) => place.id !== selectedPlace.current)
+  const handleRemovePlace = useCallback(async function handleRemovePlace() {
+    setUserPlaces((prevPickedPlaces) =>
+      prevPickedPlaces.filter((place) => place.id !== selectedPlace.current.id)
     );
-    setIsOpen(false);
 
-    const storedIds = JSON.parse(localStorage.getItem('selectedPlaces')) || [];
-    localStorage.setItem('selectedPlaces', JSON.stringify(storedIds.filter(id => id !== selectedPlace.current)));
+    setModalIsOpen(false);
   }, []);
 
   return (
     <>
-      <Modal open={isOpen} onClose={handleStopRemovePlace}>
+      <Modal open={modalIsOpen} onClose={handleStopRemovePlace}>
         <DeleteConfirmation
           onCancel={handleStopRemovePlace}
           onConfirm={handleRemovePlace}
@@ -85,16 +62,12 @@ function App() {
       <main>
         <Places
           title="I'd like to visit ..."
-          fallbackText={'Select the places you would like to visit below.'}
-          places={pickedPlaces}
+          fallbackText="Select the places you would like to visit below."
+          places={userPlaces}
           onSelectPlace={handleStartRemovePlace}
         />
-        <Places
-          title="Available Places"
-          places={availablePlaces}
-          fallbackText="Sorting places by distance..."
-          onSelectPlace={handleSelectPlace}
-        />
+
+        <AvailablePlaces onSelectPlace={handleSelectPlace} />
       </main>
     </>
   );

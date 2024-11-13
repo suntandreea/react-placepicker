@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useRef, useState} from 'react';
 import logoImg from './assets/logo.png';
 import AvailablePlaces from './components/AvailablePlaces.jsx';
 import DeleteConfirmation from './components/DeleteConfirmation.jsx';
@@ -6,35 +6,15 @@ import Error from './components/Error.jsx';
 import Modal from './components/Modal.jsx';
 
 import Places from './components/Places.jsx';
+import {useFetch} from './hooks/useFetch.js';
 import {fetchUserPlaces, updateUserPlaces} from './http.js';
 
 function App() {
   const selectedPlace = useRef();
-
-  const [userPlaces, setUserPlaces] = useState([]);
   const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
-  const [error, setError] = useState()
   const [errorUpdatingPlaces, setErrorUpdatingPlaces] = useState();
 
-  useEffect(() => {
-
-    async function getUserPlaces() {
-      setIsFetching(true);
-
-      try {
-        const places = await fetchUserPlaces();
-        setUserPlaces(places);
-      } catch (error) {
-        setError({message: error.message || 'Could not fetch data, please try again later.'});
-      }
-
-      setIsFetching(false);
-    }
-
-
-    getUserPlaces();
-  }, []);
+  const {isFetching, error, fetchedData: userPlaces, setFetchedData: setUserPlaces} = useFetch(fetchUserPlaces, []);
 
   function handleStartRemovePlace(place) {
     setModalIsOpen(true);
@@ -107,7 +87,7 @@ function App() {
       </header>
       <main>
         {error
-          ? <Error title="An error occured!" message={error?.message}/>
+          ? <Error title="An error occured!" message={error?.message} />
           : <Places
             title="I'd like to visit ..."
             fallbackText="Select the places you would like to visit below."
@@ -118,7 +98,9 @@ function App() {
           />
         }
 
-        <AvailablePlaces onSelectPlace={handleSelectPlace} />
+        <AvailablePlaces
+          onSelectPlace={handleSelectPlace}
+        />
       </main>
     </>
   );

@@ -1,7 +1,6 @@
 export async function fetchAvailablePlaces() {
   const response = await fetch('http://localhost:3000/places');
   const data = await response.json();
-  console.log('data', data);
 
   if (!response.ok) {
     throw new Error('Failed to fetch available places');
@@ -13,7 +12,6 @@ export async function fetchAvailablePlaces() {
 export async function fetchUserPlaces() {
   const response = await fetch('http://localhost:3000/user-places');
   const data = await response.json();
-  console.log('data', data);
 
   if (!response.ok) {
     throw new Error('Failed to fetch user places');
